@@ -6,6 +6,7 @@ import com.maria.desafioCliente.entities.Client;
 
 public class ClientDTO {
 
+	private Long id;
 	private String name;
 	private String cpf;
 	private Double income;
@@ -13,6 +14,7 @@ public class ClientDTO {
 	private Integer children;
 	
 	public ClientDTO(Client client) {
+		this.id = client.getId();
 		this.name = client.getName();
 		this.cpf = client.getCpf();
 		this.income = client.getIncome();
@@ -81,6 +83,14 @@ public class ClientDTO {
 
 	public void setChildren(Integer children) {
 		this.children = children;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 	
 	
