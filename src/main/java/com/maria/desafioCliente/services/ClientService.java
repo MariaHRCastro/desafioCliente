@@ -1,16 +1,20 @@
 package com.maria.desafioCliente.services;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.hibernate.ObjectNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.maria.desafioCliente.dto.ClientDTO;
 import com.maria.desafioCliente.entities.Client;
 import com.maria.desafioCliente.repositories.ClientRepository;
+import com.maria.desafioCliente.services.exceptions.DatabaseException;
+import com.maria.desafioCliente.services.exceptions.ResourceNotFoundException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 
 @Service
@@ -20,23 +24,28 @@ public class ClientService {
 	private ClientRepository repository;
 
 	public ClientDTO findById(Long id) {
-		Client client = repository.findById(id).orElseThrow();
-		ClientDTO clientDTO = new ClientDTO(client);
-		return clientDTO;
+		Client client = repository.findById(id).orElseThrow(
+				()-> new ResourceNotFoundException("Recurso Não Encontrado!"));
+		return new ClientDTO(client) ;
 	}
 
-	public List<ClientDTO> findAll() {
-		List<Client> result = repository.findAll();
-		List<ClientDTO> dto = new ArrayList<>();
-		for (Client c : result) {
-			ClientDTO clientDto = new ClientDTO(c);
-			dto.add(clientDto);
-		}
-		return dto;
+	public Page<ClientDTO> findAll(Pageable pageable) {
+		Page<Client> result = repository.findAll(pageable);
+		return result.map(x -> new ClientDTO(x));
 	}
-
+	
+	@Transactional(propagation = Propagation.SUPPORTS)
 	public void delete(Long id) {
-		repository.deleteById(id);
+		if(!repository.existsById(id)) {
+			throw new ResourceNotFoundException("Recurso Não Encontrado!");
+		}
+		try {
+			repository.deleteById(id);
+		}
+		catch(DataIntegrityViolationException e) {
+			throw new DatabaseException("Falha de integridade referencial!");
+		}
+
 	}
 
 	@Transactional
@@ -60,16 +69,15 @@ public class ClientService {
 
 	@Transactional
 	public ClientDTO update(ClientDTO clientDTO, Long id) {
-		Client clientDB = repository.getReferenceById(id);
-		/* clientDB.setBirthDate(clientDTO.getBirthDate());
-		clientDB.setChildren(clientDTO.getChildren());
-		clientDB.setCpf(clientDTO.getCpf());
-		clientDB.setIncome(clientDTO.getIncome());
-		clientDB.setName(clientDTO.getName());
-		*/
-		copyDtoToEntity(clientDTO, clientDB);
-		repository.save(clientDB);
-		return new ClientDTO(clientDB);
+		try {
+			Client clientDB = repository.getReferenceById(id);
+			copyDtoToEntity(clientDTO, clientDB);
+			repository.save(clientDB);
+			return new ClientDTO(clientDB);
+		}catch(EntityNotFoundException e) {
+			throw new ResourceNotFoundException("Recurso Não Encontrado!");
+		}
+
 	}
 
 	private void copyDtoToEntity(ClientDTO dto, Client client) {

@@ -4,12 +4,17 @@ import java.time.LocalDate;
 
 import com.maria.desafioCliente.entities.Client;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PastOrPresent;
+
 public class ClientDTO {
 
 	private Long id;
+	@NotBlank(message = "Campo não pode ser nulo!")
 	private String name;
 	private String cpf;
 	private Double income;
+	@PastOrPresent(message= "Campo não pode conter data futura!")
 	private LocalDate birthDate;
 	private Integer children;
 	

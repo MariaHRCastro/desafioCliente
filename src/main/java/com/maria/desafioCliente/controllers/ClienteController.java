@@ -1,8 +1,10 @@
 package com.maria.desafioCliente.controllers;
 
-import java.util.List;
+import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,12 +14,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.maria.desafioCliente.dto.ClientDTO;
-import com.maria.desafioCliente.entities.Client;
 import com.maria.desafioCliente.services.ClientService;
 
-import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping(value="/clients")
@@ -33,9 +35,9 @@ public class ClienteController {
 	}
 	
 	@GetMapping
-	public ResponseEntity<List<ClientDTO>> findAll(){
-		List<ClientDTO> list = service.findAll();
-		return ResponseEntity.ok(list);
+	public ResponseEntity<Page<ClientDTO>> findAll(Pageable pageable){
+		Page<ClientDTO> dto = service.findAll(pageable);
+		return ResponseEntity.ok(dto);
 	}
 	
 	@DeleteMapping(value="/{id}")
@@ -45,16 +47,18 @@ public class ClienteController {
 	}
 	
 	@PostMapping
-	public ResponseEntity<ClientDTO> insert(@RequestBody ClientDTO clientDTO) {
-		ClientDTO newClient = service.insert(clientDTO);
-		return ResponseEntity.ok().body(newClient);
+	public ResponseEntity<ClientDTO> insert(@Valid @RequestBody ClientDTO clientDTO) {
+		clientDTO = service.insert(clientDTO);
+		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+				.buildAndExpand(clientDTO.getId()).toUri();
+		return ResponseEntity.created(uri).body(clientDTO);
 		
 	}
 	
 	@PutMapping(value="/{id}")
-	public ResponseEntity<ClientDTO> update(@RequestBody ClientDTO clientDTO, @PathVariable Long id){
-		ClientDTO newClient = service.update(clientDTO, id);
-		return ResponseEntity.ok().body(newClient);
+	public ResponseEntity<ClientDTO> update(@Valid @RequestBody ClientDTO clientDTO, @PathVariable Long id){
+		clientDTO = service.update(clientDTO, id);
+		return ResponseEntity.ok().body(clientDTO);
 	}
 	
 }
